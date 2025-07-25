@@ -42,8 +42,13 @@
                 border-radius: 50%;
                 width: 32px;
                 height: 32px;
-                font-size: 18px;
+                font-size: 16px;
                 cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0;
+                line-height: 1;
               "
               :aria-label="
                 favoriteStore.isFavorite(movie) ? '찜 해제' : '찜하기'
@@ -72,9 +77,9 @@
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import MovieModal from "./MovieModal.vue";
-import { useFavoriteStore } from "@/stores/useFavoriteStore"; // 추가
+import { useFavoriteStore } from "@/stores/useFavoriteStore";
 
-const favoriteStore = useFavoriteStore(); // 추가
+const favoriteStore = useFavoriteStore();
 
 // TMDB API 키
 const API_KEY = "5c0cb498f029c30c1ce9541978aa0271";
