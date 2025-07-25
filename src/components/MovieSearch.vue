@@ -27,10 +27,19 @@
           v-for="term in searchHistoryStore.searchHistory"
           :key="term"
           class="history-item"
-          @mousedown="selectSearchTerm(term)"
         >
-          <span class="history-term">{{ term }}</span>
-          <button @click.stop="removeHistoryItem(term)" class="remove-btn">
+          <span 
+            class="history-term" 
+            @mousedown="selectSearchTerm(term)"
+          >
+            {{ term }}
+          </span>
+          <button 
+            @mousedown.stop.prevent="removeHistoryItem(term)" 
+            @click.stop.prevent="removeHistoryItem(term)"
+            class="remove-btn"
+            type="button"
+          >
             ✖
           </button>
         </div>
@@ -53,43 +62,47 @@
       <div v-else class="movie-grid">
         <div v-for="movie in movies" :key="movie.id" class="movie-card">
           <!-- 영화 포스터 -->
-          <img
-            v-if="movie.poster_path"
-            :src="'https://image.tmdb.org/t/p/w200' + movie.poster_path"
-            alt="포스터"
-          />
+          <div class="poster-container">
+            <img
+              v-if="movie.poster_path"
+              :src="'https://image.tmdb.org/t/p/w200' + movie.poster_path"
+              alt="포스터"
+              class="poster-image"
+            />
+            <div v-else class="no-poster">🎬</div>
 
-          <button
-            @click.stop="favoriteStore.toggleFavorite(movie)"
-            style="
-              position: absolute;
-              top: 8px;
-              right: 8px;
-              z-index: 2;
-              background: rgba(0, 0, 0, 0.5);
-              color: #ffd600;
-              border: none;
-              border-radius: 50%;
-              width: 32px;
-              height: 32px;
-              font-size: 18px;
-              cursor: pointer;
-              line-height: 32px;
-              padding: 0;
-              text-align: center;
-            "
-            :aria-label="favoriteStore.isFavorite(movie) ? '찜 해제' : '찜하기'"
-          >
-            {{ favoriteStore.isFavorite(movie) ? "★" : "☆" }}
-          </button>
-          <!-- 영화 제목 -->
-          <h3>{{ movie.title }}</h3>
-          <!-- 개봉일 -->
-          <p>개봉일: {{ movie.release_date || "정보 없음" }}</p>
-          <!-- 줄거리(30자 미리보기) -->
-          <p>
-            {{ (movie.overview || "줄거리 정보가 없습니다.").slice(0, 30) }}...
-          </p>
+            <!-- 찜하기 버튼 -->
+            <button
+              @click.stop="favoriteStore.toggleFavorite(movie)"
+              class="favorite-btn"
+              :aria-label="
+                favoriteStore.isFavorite(movie) ? '찜 해제' : '찜하기'
+              "
+            >
+              {{ favoriteStore.isFavorite(movie) ? "★" : "☆" }}
+            </button>
+
+            <!-- 평점 배지 -->
+            <div class="rating-badge">
+              ⭐ {{ movie.vote_average?.toFixed(1) || "N/A" }}
+            </div>
+          </div>
+
+          <!-- 영화 정보 -->
+          <div class="movie-info">
+            <!-- 영화 제목 -->
+            <h3 class="movie-title">{{ movie.title }}</h3>
+            <!-- 개봉일 -->
+            <p class="release-date">
+              개봉일: {{ movie.release_date || "정보 없음" }}
+            </p>
+            <!-- 줄거리(30자 미리보기) -->
+            <p class="overview">
+              {{
+                (movie.overview || "줄거리 정보가 없습니다.").slice(0, 50)
+              }}...
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -126,7 +139,13 @@ const selectSearchTerm = (term) => {
 };
 
 const removeHistoryItem = (term) => {
+  console.log('검색 기록 삭제:', term); // 디버깅용
   searchHistoryStore.removeSearchTerm(term);
+  
+  // UI 강제 업데이트를 위해 잠시 숨겼다가 다시 보여주기
+  if (searchHistoryStore.searchHistory.length === 0) {
+    showSearchHistory.value = false;
+  }
 };
 
 const clearAllHistory = () => {
@@ -166,6 +185,13 @@ const searchMovies = async () => {
     );
 
     movies.value = response.data.results;
+
+    // API 응답 구조 확인 (개발용)
+    if (movies.value.length > 0) {
+      console.log("첫 번째 영화 데이터:", movies.value[0]);
+      console.log("사용 가능한 필드들:", Object.keys(movies.value[0]));
+    }
+
     showResults.value = true;
 
     if (movies.value.length === 0) {
@@ -335,20 +361,112 @@ button {
 .movie-card {
   background: #1e1f2f;
   color: white;
-  padding: 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 200px;
-  height: auto;
+  overflow: hidden;
   box-sizing: border-box;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.movie-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(255, 214, 0, 0.2);
+}
+
+/* 포스터 컨테이너 */
+.poster-container {
   position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
 }
 
 /* 영화 포스터 이미지 */
-.movie-card img {
+.poster-image {
   width: 100%;
-  height: auto;
-  border-radius: 6px;
-  margin-bottom: 8px;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.movie-card:hover .poster-image {
+  transform: scale(1.05);
+}
+
+.no-poster {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #333;
+  font-size: 2rem;
+}
+
+/* 찜하기 버튼 */
+.favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffd600;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+/* 평점 배지 */
+.rating-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffd600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  backdrop-filter: blur(4px);
+}
+
+/* 영화 정보 */
+.movie-info {
+  padding: 15px;
+}
+
+.movie-title {
+  color: #ffd600;
+  font-size: 1rem;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.release-date {
+  color: #ccc;
+  font-size: 0.8rem;
+  margin: 0 0 8px 0;
+}
+
+.overview {
+  color: #aaa;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* 에러 메시지 스타일 */
