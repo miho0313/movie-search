@@ -1,12 +1,41 @@
 <template>
   <div class="search-container">
     <!-- 검색 입력창과 버튼 -->
-    <input
-      v-model="query"
-      @keyup.enter="searchMovies"
-      placeholder="영화 제목을 입력하세요"
-    />
-    <button @click="searchMovies">검색</button>
+    <div class="search-input-section">
+      <input
+        v-model="query"
+        @keyup.enter="searchMovies"
+        @focus="showSearchHistory = true"
+        @blur="hideSearchHistoryDelayed"
+        placeholder="영화 제목을 입력하세요"
+        ref="searchInput"
+      />
+      <button @click="searchMovies">검색</button>
+
+      <!-- 검색 기록 드롭다운 -->
+      <div
+        v-if="showSearchHistory && searchHistoryStore.searchHistory.length > 0"
+        class="search-history-dropdown"
+      >
+        <div class="history-header">
+          <span>최근 검색어</span>
+          <button @click="clearAllHistory" class="clear-all-btn">
+            전체 삭제
+          </button>
+        </div>
+        <div
+          v-for="term in searchHistoryStore.searchHistory"
+          :key="term"
+          class="history-item"
+          @mousedown="selectSearchTerm(term)"
+        >
+          <span class="history-term">{{ term }}</span>
+          <button @click.stop="removeHistoryItem(term)" class="remove-btn">
+            ✖
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- 검색 중 로딩 표시 -->
     <div v-if="loading">🔄 검색 중...</div>
@@ -29,7 +58,7 @@
             :src="'https://image.tmdb.org/t/p/w200' + movie.poster_path"
             alt="포스터"
           />
-          <!-- 찜 버튼: 포스터 오른쪽 위에 위치, 별이 원의 정중앙에 오도록 수정 -->
+
           <button
             @click.stop="favoriteStore.toggleFavorite(movie)"
             style="
@@ -72,9 +101,11 @@
 import { ref } from "vue";
 import axios from "axios";
 import { useFavoriteStore } from "@/stores/useFavoriteStore";
+import { useSearchHistoryStore } from "@/stores/useSearchHistoryStore";
 
-// Pinia 찜 스토어 사용
+// Pinia 스토어 사용
 const favoriteStore = useFavoriteStore();
+const searchHistoryStore = useSearchHistoryStore();
 
 const API_KEY = "5c0cb498f029c30c1ce9541978aa0271";
 
@@ -84,10 +115,39 @@ const movies = ref([]);
 const loading = ref(false);
 const error = ref(null);
 const showResults = ref(false);
+const showSearchHistory = ref(false);
+const searchInput = ref(null);
+
+// 검색 기록 관련 함수들
+const selectSearchTerm = (term) => {
+  query.value = term;
+  showSearchHistory.value = false;
+  searchMovies();
+};
+
+const removeHistoryItem = (term) => {
+  searchHistoryStore.removeSearchTerm(term);
+};
+
+const clearAllHistory = () => {
+  searchHistoryStore.clearSearchHistory();
+  showSearchHistory.value = false;
+};
+
+const hideSearchHistoryDelayed = () => {
+  // 약간의 지연을 두어 버튼 클릭이 가능하도록 함
+  setTimeout(() => {
+    showSearchHistory.value = false;
+  }, 150);
+};
 
 // 영화 검색 함수
 const searchMovies = async () => {
   if (!query.value.trim()) return;
+
+  // 검색 기록에 추가
+  searchHistoryStore.addSearchTerm(query.value.trim());
+  showSearchHistory.value = false;
 
   loading.value = true;
   error.value = null;
@@ -131,6 +191,12 @@ const clearSearch = () => {
   padding: 20px;
 }
 
+/* 검색 입력 섹션 */
+.search-input-section {
+  position: relative;
+  display: inline-block;
+}
+
 /* 검색 입력창 스타일 */
 .search-container input {
   padding: 8px;
@@ -139,6 +205,86 @@ const clearSearch = () => {
   border-radius: 10px;
   border: none;
   outline: none;
+}
+
+/* 검색 기록 드롭다운 */
+.search-history-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 500px;
+  background: #1e1f2f;
+  border: 1px solid #444;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  margin-top: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* 검색 기록 헤더 */
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #444;
+  color: #ffd600;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.history-header .clear-all-btn {
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.history-header .clear-all-btn:hover {
+  background: #ff3742;
+}
+
+/* 검색 기록 아이템 */
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.history-item:hover {
+  background: #2a2d3a;
+}
+
+.history-term {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.history-item .remove-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  padding: 4px;
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.history-item .remove-btn:hover {
+  opacity: 1;
+  color: #ff4757;
 }
 
 /* 기본 버튼 스타일 */
@@ -194,7 +340,7 @@ button {
   width: 200px;
   height: auto;
   box-sizing: border-box;
-  position: relative; /* 찜 버튼 절대 위치를 위한 설정 */
+  position: relative;
 }
 
 /* 영화 포스터 이미지 */

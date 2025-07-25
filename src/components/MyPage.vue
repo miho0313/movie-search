@@ -1,242 +1,247 @@
 <template>
   <div class="mypage-container">
-    <h1>마이페이지</h1>
+    <div class="profile-header">
+      <div class="profile-avatar">👤</div>
+      <h1>마이페이지</h1>
+      <p class="profile-subtitle">나만의 영화 취향 분석</p>
+    </div>
 
-    <!-- 찜한 영화 통계 -->
+    <!-- 통계 대시보드 -->
     <div class="stats-section">
       <div class="stat-card">
+        <div class="stat-icon">⭐</div>
         <h3>찜한 영화</h3>
         <p class="stat-number">{{ favoriteStore.favorites.length }}개</p>
       </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <h3>평균 평점</h3>
+        <p class="stat-number">{{ averageRating }}</p>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <h3>최고 평점</h3>
+        <p class="stat-number">{{ topRating }}</p>
+      </div>
     </div>
 
-    <!-- 찜한 영화 목록 -->
-    <div class="favorites-section">
-      <h2>찜한 영화 목록</h2>
-
-      <!-- 찜한 영화가 없을 때 -->
-      <div v-if="favoriteStore.favorites.length === 0" class="no-favorites">
-        <p>아직 찜한 영화가 없습니다.</p>
-        <p>영화를 검색해서 마음에 드는 영화를 찜해보세요! ⭐</p>
-      </div>
-
-      <!-- 찜한 영화 목록 -->
-      <div v-else class="favorites-grid">
-        <div
-          v-for="movie in favoriteStore.favorites"
-          :key="movie.id"
-          class="favorite-card"
-        >
-          <!-- 영화 포스터 -->
-          <img
-            v-if="movie.poster_path"
-            :src="'https://image.tmdb.org/t/p/w200' + movie.poster_path"
-            alt="포스터"
-          />
-
-          <!-- 찜 해제 버튼 -->
-          <button
-            @click="favoriteStore.toggleFavorite(movie)"
-            class="remove-favorite"
-            title="찜 해제"
-          >
-            ❌
-          </button>
-
-          <!-- 영화 정보 -->
-          <div class="movie-info">
-            <h3>{{ movie.title }}</h3>
-            <p class="release-date">
-              개봉일: {{ movie.release_date || "정보 없음" }}
-            </p>
-            <p class="rating">
-              ⭐ {{ movie.vote_average?.toFixed(1) || "N/A" }}
-            </p>
-            <p class="overview">
-              {{
-                (movie.overview || "줄거리 정보가 없습니다.").slice(0, 50)
-              }}...
-            </p>
-          </div>
+    <!-- 최근 활동 -->
+    <div class="recent-activity" v-if="latestMovie">
+      <h2>최근 찜한 영화</h2>
+      <div class="latest-movie-card">
+        <img
+          v-if="latestMovie.poster_path"
+          :src="'https://image.tmdb.org/t/p/w154' + latestMovie.poster_path"
+          :alt="latestMovie.title"
+        />
+        <div class="movie-details">
+          <h3>{{ latestMovie.title }}</h3>
+          <p class="rating">⭐ {{ latestMovie.vote_average?.toFixed(1) }}</p>
+          <p class="release-date">
+            {{ latestMovie.release_date || "개봉일 미정" }}
+          </p>
         </div>
       </div>
+    </div>
 
-      <!-- 전체 삭제 버튼 -->
-      <div v-if="favoriteStore.favorites.length > 0" class="clear-section">
-        <button @click="clearAllFavorites" class="clear-all-btn">
-          🗑️ 찜 목록 전체 삭제
-        </button>
-      </div>
+    <!-- 빈 상태 -->
+    <div v-else class="empty-state">
+      <div class="empty-icon">📽️</div>
+      <h2>아직 찜한 영화가 없습니다</h2>
+      <p>영화를 검색해서 마음에 드는 영화를 찜해보세요!</p>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { useFavoriteStore } from "@/stores/useFavoriteStore";
 
-// Pinia 찜 스토어 사용
 const favoriteStore = useFavoriteStore();
 
-// 전체 찜 목록 삭제 함수
-const clearAllFavorites = () => {
-  if (confirm("정말로 찜한 영화를 모두 삭제하시겠습니까?")) {
-    favoriteStore.favorites = [];
-  }
-};
+// 평균 평점 계산
+const averageRating = computed(() => {
+  if (favoriteStore.favorites.length === 0) return "N/A";
+  const total = favoriteStore.favorites.reduce(
+    (sum, movie) => sum + (movie.vote_average || 0),
+    0
+  );
+  return (total / favoriteStore.favorites.length).toFixed(1);
+});
+
+// 최고 평점
+const topRating = computed(() => {
+  if (favoriteStore.favorites.length === 0) return "N/A";
+  const highest = Math.max(
+    ...favoriteStore.favorites.map((movie) => movie.vote_average || 0)
+  );
+  return highest.toFixed(1);
+});
+
+// 가장 최근 찜한 영화
+const latestMovie = computed(() => {
+  if (favoriteStore.favorites.length === 0) return null;
+  return favoriteStore.favorites[favoriteStore.favorites.length - 1];
+});
 </script>
 
 <style scoped>
 .mypage-container {
-  padding: 20px;
-  max-width: 1200px;
+  padding: 30px;
+  max-width: 800px;
   margin: 0 auto;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0b14 0%, #1e1f2f 100%);
 }
 
-.mypage-container h1 {
-  color: white;
+/* 프로필 헤더 */
+.profile-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  background: #ffd600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 20px;
+}
+
+.profile-header h1 {
+  color: #ffd600;
+  margin: 0 0 10px 0;
+  font-size: 2.2rem;
+}
+
+.profile-subtitle {
+  color: #ccc;
+  margin: 0;
+  font-size: 1.1rem;
 }
 
 /* 통계 섹션 */
 .stats-section {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
   margin-bottom: 40px;
 }
 
 .stat-card {
   background: #1e1f2f;
-  color: white;
-  padding: 20px;
-  border-radius: 12px;
+  padding: 25px;
+  border-radius: 15px;
   text-align: center;
-  min-width: 150px;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: #ffd600;
+}
+
+.stat-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
 }
 
 .stat-card h3 {
+  color: #ccc;
   margin: 0 0 10px 0;
-  color: #ffd600;
+  font-size: 0.9rem;
 }
 
 .stat-number {
-  font-size: 2rem;
+  color: #ffd600;
+  font-size: 1.8rem;
   font-weight: bold;
   margin: 0;
-  color: #ffd600;
 }
 
-/* 찜한 영화 섹션 */
-.favorites-section h2 {
+/* 최근 활동 */
+.recent-activity h2 {
   color: white;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.latest-movie-card {
+  background: #1e1f2f;
+  padding: 20px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.latest-movie-card img {
+  width: 80px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.movie-details h3 {
+  color: #ffd600;
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+}
+
+.movie-details .rating {
+  color: #ffd600;
+  margin: 0 0 5px 0;
+  font-weight: bold;
+}
+
+.movie-details .release-date {
+  color: #ccc;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* 빈 상태 */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 4rem;
   margin-bottom: 20px;
 }
 
-/* 찜한 영화가 없을 때 */
-.no-favorites {
-  text-align: center;
-  color: #ccc;
-  padding: 40px;
-  background: #1e1f2f;
-  border-radius: 12px;
+.empty-state h2 {
+  color: white;
+  margin: 0 0 15px 0;
 }
 
-.no-favorites p {
-  margin: 10px 0;
+.empty-state p {
+  color: #ccc;
+  margin: 0;
   font-size: 1.1rem;
 }
 
-/* 찜한 영화 그리드 */
-.favorites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-}
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .mypage-container {
+    padding: 20px;
+  }
 
-/* 개별 찜한 영화 카드 */
-.favorite-card {
-  background: #1e1f2f;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  transition: transform 0.3s;
-}
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
 
-.favorite-card:hover {
-  transform: translateY(-5px);
-}
-
-.favorite-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-
-/* 찜 해제 버튼 */
-.remove-favorite {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.7);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s;
-  z-index: 2;
-}
-
-.remove-favorite:hover {
-  background: rgba(255, 0, 0, 0.7);
-}
-
-/* 영화 정보 */
-.movie-info {
-  padding: 15px;
-  color: white;
-}
-
-.movie-info h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.1rem;
-  color: #ffd600;
-}
-
-.release-date,
-.rating {
-  margin: 5px 0;
-  font-size: 0.9rem;
-  color: #ccc;
-}
-
-.overview {
-  margin: 8px 0 0 0;
-  font-size: 0.85rem;
-  color: #aaa;
-  line-height: 1.4;
-}
-
-/* 전체 삭제 섹션 */
-.clear-section {
-  text-align: center;
-  margin-top: 30px;
-}
-
-.clear-all-btn {
-  background: #ff4757;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.clear-all-btn:hover {
-  background: #ff3742;
+  .latest-movie-card {
+    flex-direction: column;
+    text-align: center;
+  }
 }
 </style>

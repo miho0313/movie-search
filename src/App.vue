@@ -8,19 +8,19 @@
           @click="currentPage = 'home'"
           :class="{ active: currentPage === 'home' }"
         >
-          홈
+          🏠 홈
         </button>
         <button
           @click="currentPage = 'favorites'"
           :class="{ active: currentPage === 'favorites' }"
         >
-          찜 목록 ({{ favoriteStore.favorites.length }})
+          ⭐ 찜 목록 ({{ favoriteStore.favorites.length }})
         </button>
         <button
           @click="currentPage = 'mypage'"
           :class="{ active: currentPage === 'mypage' }"
         >
-          마이페이지
+          👤 마이페이지
         </button>
       </div>
     </nav>
@@ -51,6 +51,7 @@ import { ref } from "vue";
 import MovieSearch from "./components/MovieSearch.vue";
 import MovieRanking from "./components/MovieRanking.vue";
 import FavoriteList from "./components/FavoriteList.vue";
+import MyPage from "./components/MyPage.vue"; // MyPage 컴포넌트 추가
 import { useFavoriteStore } from "@/stores/useFavoriteStore";
 
 // 현재 페이지 상태
@@ -74,8 +75,8 @@ body {
 
 /* App 루트 요소 스타일 */
 #app {
-  width: 100vw; /* 화면 전체 너비 사용 */
-  min-height: 100vh; /* 화면 전체 높이 사용 */
+  width: 100vw;
+  min-height: 100vh;
   background-color: #0a0b14;
   color: white;
   display: flex;
@@ -84,14 +85,14 @@ body {
 
 /* 네비게이션 스타일 */
 .navbar {
-  width: 100%; /* 전체 너비 사용 */
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 30px;
   background: #1e1f2f;
   border-bottom: 2px solid #ffd600;
-  box-sizing: border-box; /* 패딩 포함한 너비 계산 */
+  box-sizing: border-box;
 }
 
 .navbar h1 {
