@@ -14,7 +14,7 @@
           @click="currentPage = 'favorites'"
           :class="{ active: currentPage === 'favorites' }"
         >
-          ⭐ 찜 목록 ({{ favoriteStore.favorites.length }})
+          💖 찜 목록 ({{ favoriteStore.favorites.length }})
         </button>
         <button
           @click="currentPage = 'mypage'"

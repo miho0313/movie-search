@@ -27,19 +27,10 @@
           v-for="term in searchHistoryStore.searchHistory"
           :key="term"
           class="history-item"
+          @mousedown="selectSearchTerm(term)"
         >
-          <span 
-            class="history-term" 
-            @mousedown="selectSearchTerm(term)"
-          >
-            {{ term }}
-          </span>
-          <button 
-            @mousedown.stop.prevent="removeHistoryItem(term)" 
-            @click.stop.prevent="removeHistoryItem(term)"
-            class="remove-btn"
-            type="button"
-          >
+          <span class="history-term">{{ term }}</span>
+          <button @click.stop="removeHistoryItem(term)" class="remove-btn">
             ✖
           </button>
         </div>
@@ -60,7 +51,12 @@
 
       <!-- 영화 검색 결과 목록 -->
       <div v-else class="movie-grid">
-        <div v-for="movie in movies" :key="movie.id" class="movie-card">
+        <div
+          v-for="movie in movies"
+          :key="movie.id"
+          class="movie-card"
+          @click="selectMovie(movie.id)"
+        >
           <!-- 영화 포스터 -->
           <div class="poster-container">
             <img
@@ -79,7 +75,7 @@
                 favoriteStore.isFavorite(movie) ? '찜 해제' : '찜하기'
               "
             >
-              {{ favoriteStore.isFavorite(movie) ? "★" : "☆" }}
+              {{ favoriteStore.isFavorite(movie) ? "💖" : "🤍" }}
             </button>
 
             <!-- 평점 배지 -->
@@ -106,6 +102,13 @@
         </div>
       </div>
     </div>
+
+    <!-- 영화 상세 모달 -->
+    <MovieModal
+      v-if="selectedMovie"
+      :movie="selectedMovie"
+      @close="selectedMovie = null"
+    />
   </div>
 </template>
 
@@ -115,6 +118,7 @@ import { ref } from "vue";
 import axios from "axios";
 import { useFavoriteStore } from "@/stores/useFavoriteStore";
 import { useSearchHistoryStore } from "@/stores/useSearchHistoryStore";
+import MovieModal from "./MovieModal.vue";
 
 // Pinia 스토어 사용
 const favoriteStore = useFavoriteStore();
@@ -130,6 +134,7 @@ const error = ref(null);
 const showResults = ref(false);
 const showSearchHistory = ref(false);
 const searchInput = ref(null);
+const selectedMovie = ref(null);
 
 // 검색 기록 관련 함수들
 const selectSearchTerm = (term) => {
@@ -139,13 +144,7 @@ const selectSearchTerm = (term) => {
 };
 
 const removeHistoryItem = (term) => {
-  console.log('검색 기록 삭제:', term); // 디버깅용
   searchHistoryStore.removeSearchTerm(term);
-  
-  // UI 강제 업데이트를 위해 잠시 숨겼다가 다시 보여주기
-  if (searchHistoryStore.searchHistory.length === 0) {
-    showSearchHistory.value = false;
-  }
 };
 
 const clearAllHistory = () => {
@@ -154,7 +153,6 @@ const clearAllHistory = () => {
 };
 
 const hideSearchHistoryDelayed = () => {
-  // 약간의 지연을 두어 버튼 클릭이 가능하도록 함
   setTimeout(() => {
     showSearchHistory.value = false;
   }, 150);
@@ -186,7 +184,6 @@ const searchMovies = async () => {
 
     movies.value = response.data.results;
 
-    // API 응답 구조 확인 (개발용)
     if (movies.value.length > 0) {
       console.log("첫 번째 영화 데이터:", movies.value[0]);
       console.log("사용 가능한 필드들:", Object.keys(movies.value[0]));
@@ -201,6 +198,24 @@ const searchMovies = async () => {
     error.value = "에러가 발생했습니다.";
   } finally {
     loading.value = false;
+  }
+};
+
+// 영화 클릭 시 상세 정보 조회
+const selectMovie = async (movieId) => {
+  try {
+    const response = await axios.get(
+      `https://api.themoviedb.org/3/movie/${movieId}`,
+      {
+        params: {
+          api_key: API_KEY,
+          language: "ko-KR",
+        },
+      }
+    );
+    selectedMovie.value = response.data;
+  } catch (err) {
+    console.error("상세 정보를 불러오지 못했습니다.");
   }
 };
 

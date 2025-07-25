@@ -31,10 +31,25 @@
             <!-- 찜 버튼 추가 -->
             <button
               @click.stop="favoriteStore.toggleFavorite(movie)"
-              style="position:absolute;top:8px;right:8px;z-index:3;background:rgba(0,0,0,0.5);color:#ffd600;border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;"
-              :aria-label="favoriteStore.isFavorite(movie) ? '찜 해제' : '찜하기'"
+              style="
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                z-index: 3;
+                background: rgba(0, 0, 0, 0.5);
+                color: #ffd600;
+                border: none;
+                border-radius: 50%;
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+                cursor: pointer;
+              "
+              :aria-label="
+                favoriteStore.isFavorite(movie) ? '찜 해제' : '찜하기'
+              "
             >
-              {{ favoriteStore.isFavorite(movie) ? "★" : "☆" }}
+              {{ favoriteStore.isFavorite(movie) ? "💖" : "🤍" }}
             </button>
           </div>
         </div>
